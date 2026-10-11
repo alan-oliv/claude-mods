@@ -1,22 +1,22 @@
 {
   "name": "session-cards",
   "version": "0.2.1",
-  "description": "Session stats as cards above the prompt: git, model, effort, context, limits and cost",
+  "description": "Session stats above the prompt: branch and session name, then cards for model, effort, context, limits and cost",
   "types": "./types/index.d.ts",
   "author": {
     "name": "alan-oliv"
   },
   "userConfig": {
+    "showBranch": {
+      "type": "boolean",
+      "title": "Show branch",
+      "description": "The current git branch, above the cards",
+      "default": true
+    },
     "showSession": {
       "type": "boolean",
       "title": "Show session name",
       "description": "The name set with /rename or --name, above the cards",
-      "default": true
-    },
-    "showGit": {
-      "type": "boolean",
-      "title": "Show git card",
-      "description": "The current branch",
       "default": true
     },
     "showModel": {

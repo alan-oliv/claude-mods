@@ -61,7 +61,6 @@ export function filledCells(progress: number, width: number): number {
 
 function cards(s: Snapshot): Card[] {
   return [
-    { option: 'showGit', label: 'git', value: s.branch ?? 'no git', line: LINE },
     { option: 'showModel', label: 'model', value: displayModel(s.model), line: BLUE, valueColor: BLUE },
     { option: 'showEffort', label: 'effort', value: s.effort ?? '—', line: PURPLE, valueColor: PURPLE },
     {
@@ -163,12 +162,21 @@ export const register: Register = (on, options) => {
       const value = clip(card.value)
       return { ...card, value, width: Math.max(card.label.length, value.length) + 2 * PADDING_X }
     })
+    const header = [
+      { label: 'branch', value: options.showBranch ? s.branch : null },
+      { label: 'session', value: options.showSession ? s.title : null },
+    ].filter(part => part.value)
     return (
       <Box flexDirection="column" width={e.props.bodyColumns}>
-        {options.showSession && s.title && (
+        {header.length > 0 && (
           <Box marginTop={2}>
-            <Text color={LABEL}>session: </Text>
-            <Text color={VALUE} wrap="truncate-end">{s.title}</Text>
+            {header.map(({ label, value }, i) => (
+              <Box>
+                {i > 0 && <Text color={LABEL}> · </Text>}
+                <Text color={LABEL}>{label}: </Text>
+                <Text color={VALUE} wrap="truncate-end">{value}</Text>
+              </Box>
+            ))}
           </Box>
         )}
         <Box flexDirection="row" flexWrap="wrap" columnGap={1}>

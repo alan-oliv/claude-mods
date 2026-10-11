@@ -53,15 +53,18 @@ async function mountBand($: Engine, on: On) {
   })
 }
 
-test('heads the cards with the session name', async ($, on) => {
+test('heads the cards with the branch and the session name on one line', async ($, on) => {
   const ui = await mountBand($, on)
-  expect((await ui.find({ type: 'Text', text: 'adding-session-name' }))?.text).toBe('adding-session-name')
-  expect((await ui.find({ type: 'Text', text: 'git' }))?.text).toBe('git')
+  expect((await ui.findAll({ type: 'Text' })).map(text => text.text).slice(0, 5)).toEqual([
+    'branch: ', 'main', ' · ', 'session: ', 'adding-session-name',
+  ])
+  expect(await ui.find({ type: 'Text', text: 'git' })).toBe(undefined)
 })
 
-test('leaves out the session name and the cards the user turned off', { options: { showSession: false, showGit: false } }, async ($, on) => {
+test('leaves out the branch, the session name and the cards the user turned off', { options: { showBranch: false, showSession: false, showModel: false } }, async ($, on) => {
   const ui = await mountBand($, on)
+  expect(await ui.find({ type: 'Text', text: 'main' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: 'adding-session-name' })).toBe(undefined)
-  expect(await ui.find({ type: 'Text', text: 'git' })).toBe(undefined)
-  expect((await ui.find({ type: 'Text', text: 'model' }))?.text).toBe('model')
+  expect(await ui.find({ type: 'Text', text: 'model' })).toBe(undefined)
+  expect((await ui.find({ type: 'Text', text: 'effort' }))?.text).toBe('effort')
 })
