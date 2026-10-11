@@ -227,7 +227,7 @@ export const register: Register = (on, options) => {
               </Box>
             )}
             {branch && s.changes && (
-              <Box backgroundColor={CARD_BG} paddingX={PADDING_X} flexShrink={0}>
+              <Box backgroundColor={CARD_BG} paddingRight={PADDING_X} flexShrink={0}>
                 <Text color={LABEL} backgroundColor={CARD_BG}>{`🗋 ${s.changes.files} • `}</Text>
                 <Text color={GREEN} backgroundColor={CARD_BG}>{`+${s.changes.added} `}</Text>
                 <Text color={RED} backgroundColor={CARD_BG}>{`-${s.changes.removed}`}</Text>
