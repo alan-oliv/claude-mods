@@ -2,6 +2,10 @@
 
 Claude Code mods I made for my own setup.
 
+---
+
+### Session stats
+
 ![session-cards above the Claude Code prompt](docs/session-cards-hero-linear.png)
 
 - git shows the current branch
