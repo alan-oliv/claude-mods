@@ -5,5 +5,55 @@
   "types": "./types/index.d.ts",
   "author": {
     "name": "alan-oliv"
+  },
+  "userConfig": {
+    "showSession": {
+      "type": "boolean",
+      "title": "Show session name",
+      "description": "The name set with /rename or --name, above the cards",
+      "default": true
+    },
+    "showGit": {
+      "type": "boolean",
+      "title": "Show git card",
+      "description": "The current branch",
+      "default": true
+    },
+    "showModel": {
+      "type": "boolean",
+      "title": "Show model card",
+      "description": "The session model",
+      "default": true
+    },
+    "showEffort": {
+      "type": "boolean",
+      "title": "Show effort card",
+      "description": "The effort level from your settings",
+      "default": true
+    },
+    "showContext": {
+      "type": "boolean",
+      "title": "Show context card",
+      "description": "How full the context window is",
+      "default": true
+    },
+    "showFiveHourLimit": {
+      "type": "boolean",
+      "title": "Show 5h limit card",
+      "description": "Usage of the 5 hour window and when it resets",
+      "default": true
+    },
+    "showWeeklyLimit": {
+      "type": "boolean",
+      "title": "Show weekly limit card",
+      "description": "Usage of the weekly window and when it resets",
+      "default": true
+    },
+    "showCost": {
+      "type": "boolean",
+      "title": "Show cost card",
+      "description": "The session cost in dollars",
+      "default": true
+    }
   }
 }

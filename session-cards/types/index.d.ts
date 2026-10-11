@@ -2,6 +2,7 @@
 export type LimitWindow = { percent: number; resetIn: string | null }
 
 export type Snapshot = {
+  title: string | null
   branch: string | null
   model: string
   effort: string | null

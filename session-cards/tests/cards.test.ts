@@ -1,4 +1,6 @@
+import type { On } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
+import type { Engine } from 'claude-code/testing'
 
 import { compactTokens, displayModel, duration, filledCells, limitValue, resolveEffort } from '../hooks/register'
 
@@ -29,4 +31,37 @@ test('words a limit card from its window: percent used, then time to reset', asy
   expect(limitValue({ percent: 1, resetIn: '4h 8m' })).toBe('1% · 4h 8m')
   expect(limitValue({ percent: 45, resetIn: null })).toBe('45%')
   expect(limitValue(null)).toBe('—')
+})
+
+async function mountBand($: Engine, on: On) {
+  on('process.run', () => ({ value: { exitCode: 0, stdout: 'main\n', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  on('session.model', () => ({ value: 'claude-opus-5-5' }))
+  on('settings.read', () => ({ value: {} }))
+  on('session.usage', () => ({ value: { startedAt: 0, context: { window: 200_000 }, rateLimits: [] } }))
+  on('clock.now', () => ({ value: 0 }))
+  on('clock.every', () => ({ value: undefined }))
+  on('classic.SessionStart', () => ({}))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+
+  await $.classic.SessionStart({ source: 'startup', session_title: 'adding-session-name' })
+  await $.session.start({ cwd: '/repo', surface: 'terminal', isInteractive: true })
+  return $.ui.mount({
+    plugin: 'session-cards',
+    surface: 'terminal',
+    component: 'AbovePrompt',
+    props: { hasSurvey: false, isWorking: false, maxRows: 20, bodyColumns: 120, scroll: { offset: 0, bodyRows: 19 }, view: {} },
+  })
+}
+
+test('heads the cards with the session name', async ($, on) => {
+  const ui = await mountBand($, on)
+  expect((await ui.find({ type: 'Text', text: 'adding-session-name' }))?.text).toBe('adding-session-name')
+  expect((await ui.find({ type: 'Text', text: 'git' }))?.text).toBe('git')
+})
+
+test('leaves out the session name and the cards the user turned off', { options: { showSession: false, showGit: false } }, async ($, on) => {
+  const ui = await mountBand($, on)
+  expect(await ui.find({ type: 'Text', text: 'adding-session-name' })).toBe(undefined)
+  expect(await ui.find({ type: 'Text', text: 'git' })).toBe(undefined)
+  expect((await ui.find({ type: 'Text', text: 'model' }))?.text).toBe('model')
 })
