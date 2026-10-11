@@ -10,8 +10,9 @@ Claude Code mods I made for my own setup.
 
 - branch and session sit on one line above the cards. branch is the current git branch, session is the name from `/rename` or `--name`. After a `/rename` the name updates on your next prompt
 - model is the session model
-- effort is the effort level from your settings, the model setting first and then the global one
+- effort is the effort level from your settings, the model setting first and then the global one. The bar fills by level, from low to max
 - context is how full the context window is, the top line works as a progress bar
+- startup is how much of the context window the session takes before your first prompt: system prompt, tools, MCP, skills, agents and memory files. It's measured again after each turn, so an MCP server that connects late shows up. It's green under 10% of the window, yellow up to 20% and red past that, when the bar is full
 - 5h limit is how much of the 5 hour window you used and when it resets, with a bar too
 - weekly limit is the same for the weekly window
 - cost is the session cost in dollars, same number as `/cost`. On Max it's just for reference
@@ -29,6 +30,30 @@ Type this at the prompt of a Claude Code terminal session:
 ```
 
 Answer `y` to add the marketplace and pick a scope. It starts working right away.
+
+### Turning cards off
+
+Open `/config` and type `session-cards` to filter the list:
+
+```
+  ╭─────────────────────────────────────────────────╮
+  │ ⌕ session-cards                                 │
+  ╰─────────────────────────────────────────────────╯
+
+  ❯ Show branch · session-cards             true
+    Show session name · session-cards       true
+    Show model card · session-cards         true
+    Show effort card · session-cards        true
+    Show context card · session-cards       true
+    Show startup card · session-cards       true
+    Show 5h limit card · session-cards      true
+    Show weekly limit card · session-cards  true
+    Show cost card · session-cards          true
+
+  Enter/Space to change · / to search · Esc to close
+```
+
+Move to a row and press Enter or Space to switch it between `true` and `false`. It applies right away, no restart needed.
 
 ### Notes
 
