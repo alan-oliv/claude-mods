@@ -2,7 +2,7 @@ import type { On } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 
-import { compactTokens, displayModel, duration, filledCells, limitValue, resolveEffort } from '../hooks/register'
+import { compactTokens, displayModel, duration, effortProgress, filledCells, limitValue, resolveEffort, startupColor, startupTokens } from '../hooks/register'
 
 test('turns model ids into display names and leaves other names alone', async () => {
   expect(displayModel('claude-opus-5-5')).toBe('Opus 5.5')
@@ -31,6 +31,28 @@ test('words a limit card from its window: percent used, then time to reset', asy
   expect(limitValue({ percent: 1, resetIn: '4h 8m' })).toBe('1% · 4h 8m')
   expect(limitValue({ percent: 45, resetIn: null })).toBe('45%')
   expect(limitValue(null)).toBe('—')
+})
+
+test('counts startup as every row in use but the conversation', async () => {
+  const row = (name: string, tokens: number, kind: 'used' | 'free' | 'buffer' | 'deferred') => ({ name, tokens, kind, color: 'text', isDeferred: kind === 'deferred' })
+  expect(startupTokens([
+    row('System prompt', 2_400, 'used'),
+    row('MCP tools', 7_000, 'used'),
+    row('Skills', 9_900, 'used'),
+    row('MCP tools (deferred)', 116_900, 'deferred'),
+    row('Messages', 3_200, 'used'),
+    row('Free space', 938_100, 'free'),
+    row('Autocompact buffer', 33_000, 'buffer'),
+  ])).toBe(19_300)
+})
+
+test('fills the effort bar by level, low to max', async () => {
+  expect(['low', 'medium', 'high', 'xhigh', 'max'].map(effortProgress)).toEqual([0.2, 0.4, 0.6, 0.8, 1])
+  expect([effortProgress(null), effortProgress('turbo')]).toEqual([0, 0])
+})
+
+test('colors startup green, then yellow from 10% of the window, then red from 20%', async () => {
+  expect([startupColor(3), startupColor(10), startupColor(19.9), startupColor(20)]).toEqual(['#72c590', '#f3d066', '#f3d066', '#f47067'])
 })
 
 async function mountBand($: Engine, on: On) {

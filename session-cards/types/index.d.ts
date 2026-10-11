@@ -9,6 +9,7 @@ export type Snapshot = {
   context: { tokens: number; window: number; percent: number }
   limits: { fiveHour: LimitWindow | null; sevenDay: LimitWindow | null }
   costUsd: number | null
+  startup: number | null
 }
 
 declare module 'claude-code' {

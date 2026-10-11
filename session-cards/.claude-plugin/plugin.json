@@ -1,7 +1,7 @@
 {
   "name": "session-cards",
   "version": "0.2.1",
-  "description": "Session stats above the prompt: branch and session name, then cards for model, effort, context, limits and cost",
+  "description": "Session stats above the prompt: branch and session name, then cards for model, effort, context, startup, limits and cost",
   "types": "./types/index.d.ts",
   "author": {
     "name": "alan-oliv"
@@ -35,6 +35,12 @@
       "type": "boolean",
       "title": "Show context card",
       "description": "How full the context window is",
+      "default": true
+    },
+    "showStartup": {
+      "type": "boolean",
+      "title": "Show startup card",
+      "description": "How much of the context window the session takes before the first prompt",
       "default": true
     },
     "showFiveHourLimit": {
