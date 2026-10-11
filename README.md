@@ -8,7 +8,7 @@ Claude Code mods I made for my own setup.
 
 ![session-cards above the Claude Code prompt](docs/session-cards-hero-linear.png)
 
-- git shows the current branch
+- branch and session sit on one line above the cards. branch is the current git branch, session is the name from `/rename` or `--name`. After a `/rename` the name updates on your next prompt
 - model is the session model
 - effort is the effort level from your settings, the model setting first and then the global one
 - context is how full the context window is, the top line works as a progress bar
@@ -17,6 +17,8 @@ Claude Code mods I made for my own setup.
 - cost is the session cost in dollars, same number as `/cost`. On Max it's just for reference
 
 Everything refreshes every 5 seconds and after each turn. When the terminal is narrow the cards wrap to the next line and keep their width.
+
+Every card, the branch and the session name can be turned off in `/config`, they all start on.
 
 ### Install
 

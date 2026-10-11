@@ -20,7 +20,7 @@ const ORANGE = '#fbaa60'
 const TRACK = '#3c3d4e'
 
 // progress (0 to 1) turns the top line into a bar.
-type Card = { label: string; value: string; line: string; valueColor?: string; progress?: number }
+type Card = { option: string; label: string; value: string; line: string; valueColor?: string; progress?: number }
 
 export function displayModel(id: string): string {
   const match = /^claude-([a-z]+)-(\d+)-(\d+)/.exec(id)
@@ -61,25 +61,26 @@ export function filledCells(progress: number, width: number): number {
 
 function cards(s: Snapshot): Card[] {
   return [
-    { label: 'git', value: s.branch ?? 'no git', line: LINE },
-    { label: 'model', value: displayModel(s.model), line: BLUE, valueColor: BLUE },
-    { label: 'effort', value: s.effort ?? '—', line: PURPLE, valueColor: PURPLE },
+    { option: 'showModel', label: 'model', value: displayModel(s.model), line: BLUE, valueColor: BLUE },
+    { option: 'showEffort', label: 'effort', value: s.effort ?? '—', line: PURPLE, valueColor: PURPLE },
     {
+      option: 'showContext',
       label: 'context',
       value: `${compactTokens(s.context.tokens)}/${compactTokens(s.context.window)}, ${s.context.percent}%`,
       line: GREEN,
       valueColor: GREEN,
       progress: s.context.tokens / s.context.window,
     },
-    { label: '5h limit', value: limitValue(s.limits.fiveHour), line: YELLOW, valueColor: YELLOW, progress: (s.limits.fiveHour?.percent ?? 0) / 100 },
+    { option: 'showFiveHourLimit', label: '5h limit', value: limitValue(s.limits.fiveHour), line: YELLOW, valueColor: YELLOW, progress: (s.limits.fiveHour?.percent ?? 0) / 100 },
     {
+      option: 'showWeeklyLimit',
       label: 'weekly limit',
       value: limitValue(s.limits.sevenDay),
       line: ORANGE,
       valueColor: ORANGE,
       progress: (s.limits.sevenDay?.percent ?? 0) / 100,
     },
-    { label: 'cost', value: s.costUsd === null ? '—' : `$${s.costUsd.toFixed(2)}`, line: LINE },
+    { option: 'showCost', label: 'cost', value: s.costUsd === null ? '—' : `$${s.costUsd.toFixed(2)}`, line: LINE },
   ]
 }
 
@@ -107,6 +108,7 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
   const fiveHour = usage.rateLimits.find(limit => limit.kind === 'five_hour')
   const sevenDay = usage.rateLimits.find(limit => limit.kind === 'seven_day')
   return {
+    title,
     branch: head.exitCode === 0 ? head.stdout.trim() : null,
     model,
     effort: resolveEffort(settings, model),
@@ -117,6 +119,8 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
   }
 }
 
+// Only classic hook inputs carry the name (/rename or --name), so a rename shows from the next prompt.
+let title: string | null = null
 let shown = ''
 
 async function refresh($: EngineInterface) {
@@ -127,10 +131,20 @@ async function refresh($: EngineInterface) {
   await update($, snapshot, () => next)
 }
 
-export const register: Register = on => {
+export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     $.clock.every(REFRESH_MS, () => void refresh($))
     await refresh($)
+    return next(e)
+  })
+
+  on('classic.SessionStart', async ($, e, next) => {
+    title = e.session_title ?? null
+    return next(e)
+  })
+
+  on('classic.UserPromptSubmit', async ($, e, next) => {
+    title = e.session_title ?? null
     return next(e)
   })
 
@@ -144,25 +158,42 @@ export const register: Register = on => {
     if (e.props.hasSurvey || s === null) return next(e)
 
     const { Box, Text } = $.ui.resolve(e)
-    const shownCards = cards(s).map(card => {
+    const shownCards = cards(s).filter(card => options[card.option]).map(card => {
       const value = clip(card.value)
       return { ...card, value, width: Math.max(card.label.length, value.length) + 2 * PADDING_X }
     })
+    const header = [
+      { label: 'branch', value: options.showBranch ? s.branch : null },
+      { label: 'session', value: options.showSession ? s.title : null },
+    ].filter(part => part.value)
     return (
-      <Box flexDirection="row" flexWrap="wrap" columnGap={1} width={e.props.bodyColumns}>
-        {shownCards.map(({ label, value, width, line, valueColor = VALUE, progress = 1 }) => (
-          <Box flexDirection="column" width={width}>
-            {/* A bottom-eighth bar in the row above sits right on the card's top edge. */}
-            <Box flexDirection="row">
-              <Text color={line}>{'▁'.repeat(filledCells(progress, width))}</Text>
-              <Text color={TRACK}>{'▁'.repeat(width - filledCells(progress, width))}</Text>
-            </Box>
-            <Box flexDirection="column" backgroundColor={CARD_BG} paddingX={PADDING_X} paddingY={1}>
-              <Text color={LABEL} backgroundColor={CARD_BG}>{label}</Text>
-              <Text color={valueColor} backgroundColor={CARD_BG}>{value}</Text>
-            </Box>
+      <Box flexDirection="column" width={e.props.bodyColumns}>
+        {header.length > 0 && (
+          <Box marginTop={2}>
+            {header.map(({ label, value }, i) => (
+              <Box>
+                {i > 0 && <Text color={LABEL}> · </Text>}
+                <Text color={LABEL}>{label}: </Text>
+                <Text color={VALUE} wrap="truncate-end">{value}</Text>
+              </Box>
+            ))}
           </Box>
-        ))}
+        )}
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
+          {shownCards.map(({ label, value, width, line, valueColor = VALUE, progress = 1 }) => (
+            <Box flexDirection="column" width={width}>
+              {/* A bottom-eighth bar in the row above sits right on the card's top edge. */}
+              <Box flexDirection="row">
+                <Text color={line}>{'▁'.repeat(filledCells(progress, width))}</Text>
+                <Text color={TRACK}>{'▁'.repeat(width - filledCells(progress, width))}</Text>
+              </Box>
+              <Box flexDirection="column" backgroundColor={CARD_BG} paddingX={PADDING_X} paddingY={1}>
+                <Text color={LABEL} backgroundColor={CARD_BG}>{label}</Text>
+                <Text color={valueColor} backgroundColor={CARD_BG}>{value}</Text>
+              </Box>
+            </Box>
+          ))}
+        </Box>
       </Box>
     )
   })

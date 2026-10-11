@@ -1,9 +1,59 @@
 {
   "name": "session-cards",
   "version": "0.2.1",
-  "description": "Session stats as cards above the prompt: git, model, effort, context, limits and cost",
+  "description": "Session stats above the prompt: branch and session name, then cards for model, effort, context, limits and cost",
   "types": "./types/index.d.ts",
   "author": {
     "name": "alan-oliv"
+  },
+  "userConfig": {
+    "showBranch": {
+      "type": "boolean",
+      "title": "Show branch",
+      "description": "The current git branch, above the cards",
+      "default": true
+    },
+    "showSession": {
+      "type": "boolean",
+      "title": "Show session name",
+      "description": "The name set with /rename or --name, above the cards",
+      "default": true
+    },
+    "showModel": {
+      "type": "boolean",
+      "title": "Show model card",
+      "description": "The session model",
+      "default": true
+    },
+    "showEffort": {
+      "type": "boolean",
+      "title": "Show effort card",
+      "description": "The effort level from your settings",
+      "default": true
+    },
+    "showContext": {
+      "type": "boolean",
+      "title": "Show context card",
+      "description": "How full the context window is",
+      "default": true
+    },
+    "showFiveHourLimit": {
+      "type": "boolean",
+      "title": "Show 5h limit card",
+      "description": "Usage of the 5 hour window and when it resets",
+      "default": true
+    },
+    "showWeeklyLimit": {
+      "type": "boolean",
+      "title": "Show weekly limit card",
+      "description": "Usage of the weekly window and when it resets",
+      "default": true
+    },
+    "showCost": {
+      "type": "boolean",
+      "title": "Show cost card",
+      "description": "The session cost in dollars",
+      "default": true
+    }
   }
 }
