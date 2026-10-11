@@ -6,7 +6,7 @@ Claude Code mods I made for my own setup.
 
 Session stats as small cards in the band above the prompt. I made it to replace ccstatusline with a native mod.
 
-![session-cards above the Claude Code prompt](docs/Session%20Cards%20Hero%20v2-selection.png)
+![session-cards above the Claude Code prompt](docs/session-cards-hero-linear.png)
 
 - git shows the current branch
 - model is the session model
