@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { ContextCategory, EngineInterface, Register, SessionRateLimit, Settings } from 'claude-code'
 
-import type { LimitWindow, Snapshot } from '../types'
+import type { DiffStat, LimitWindow, Snapshot } from '../types'
 
 const snapshot = atom({ plugin: 'session-cards', key: 'snapshot' } as const, null)
 
@@ -74,6 +74,16 @@ export function startupTokens(categories: readonly ContextCategory[]): number {
   return categories.filter(c => c.kind === 'used' && c.name !== 'Messages').reduce((sum, c) => sum + c.tokens, 0)
 }
 
+// Binary files read "-" for both counts.
+export function diffStat(numstat: string): DiffStat {
+  const rows = numstat.split('\n').filter(Boolean).map(line => line.split('\t'))
+  return {
+    files: rows.length,
+    added: rows.reduce((sum, [added]) => sum + (Number(added) || 0), 0),
+    removed: rows.reduce((sum, [, removed]) => sum + (Number(removed) || 0), 0),
+  }
+}
+
 export function filledCells(progress: number, width: number): number {
   return Math.min(width, Math.max(0, Math.round(progress * width)))
 }
@@ -125,8 +135,10 @@ function limitWindow(limit: SessionRateLimit | undefined, now: number): LimitWin
 }
 
 async function readSnapshot($: EngineInterface): Promise<Snapshot> {
-  const [head, model, settings, usage, now] = await Promise.all([
+  const [head, diff, model, settings, usage, now] = await Promise.all([
     $.process.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD']),
+    // Without --no-optional-locks, diff rewrites the index every refresh and can collide with the user's own git.
+    $.process.run(['git', '--no-optional-locks', 'diff', 'HEAD', '--numstat']),
     $.session.model(),
     $.settings.read(),
     $.session.usage(),
@@ -138,6 +150,7 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
   return {
     title,
     branch: head.exitCode === 0 ? head.stdout.trim() : null,
+    changes: diff.exitCode === 0 ? diffStat(diff.stdout) : null,
     model,
     effort: resolveEffort(settings, model),
     // tokens and percent are absent until the window's first response.
@@ -169,6 +182,8 @@ async function refresh($: EngineInterface) {
 
 export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
+    // A reload starts the module over and classic.SessionStart does not fire again, so take the name from the last snapshot.
+    title ??= (await read($, snapshot))?.title ?? null
     $.clock.every(REFRESH_MS, () => void refresh($))
     await measureStartup($)
     await refresh($)
@@ -200,21 +215,30 @@ export const register: Register = (on, options) => {
       const value = clip(card.value)
       return { ...card, value, width: Math.max(card.label.length, value.length) + 2 * PADDING_X }
     })
-    const header = [
-      { label: 'branch', value: options.showBranch ? s.branch : null },
-      { label: 'session', value: options.showSession ? s.title : null },
-    ].filter(part => part.value)
+    const branch = options.showBranch ? s.branch : null
+    const session = options.showSession ? s.title : null
     return (
       <Box flexDirection="column" width={e.props.bodyColumns}>
-        {header.length > 0 && (
-          <Box marginTop={2}>
-            {header.map(({ label, value }, i) => (
-              <Box>
-                {i > 0 && <Text color={LABEL}> · </Text>}
-                <Text color={LABEL}>{label}: </Text>
-                <Text color={VALUE} wrap="truncate-end">{value}</Text>
+        {(branch || session) && (
+          <Box marginTop={2} columnGap={1}>
+            {branch && (
+              <Box backgroundColor={CARD_BG} paddingX={PADDING_X} flexShrink={0}>
+                <Text color={GREEN} backgroundColor={CARD_BG}>{`⎇ ${branch}`}</Text>
               </Box>
-            ))}
+            )}
+            {branch && s.changes && (
+              <Box backgroundColor={CARD_BG} paddingX={PADDING_X} flexShrink={0}>
+                <Text color={LABEL} backgroundColor={CARD_BG}>{`🗋 ${s.changes.files} • `}</Text>
+                <Text color={GREEN} backgroundColor={CARD_BG}>{`+${s.changes.added} `}</Text>
+                <Text color={RED} backgroundColor={CARD_BG}>{`-${s.changes.removed}`}</Text>
+              </Box>
+            )}
+            {session && (
+              <Box>
+                <Text color={LABEL}>session: </Text>
+                <Text color={VALUE} wrap="truncate-end">{session}</Text>
+              </Box>
+            )}
           </Box>
         )}
         <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
