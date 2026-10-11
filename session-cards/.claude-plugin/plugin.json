@@ -1,0 +1,9 @@
+{
+  "name": "session-cards",
+  "version": "0.1.0",
+  "description": "Session stats as cards above the prompt: git, model, effort, context, limits and cost",
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "alan-oliv"
+  }
+}

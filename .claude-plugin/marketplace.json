@@ -1,0 +1,13 @@
+{
+  "name": "claude-mods",
+  "description": "Claude Code mods by alan-oliv",
+  "owner": {
+    "name": "alan-oliv"
+  },
+  "plugins": [
+    {
+      "name": "session-cards",
+      "source": "./session-cards"
+    }
+  ]
+}
