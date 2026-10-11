@@ -8,15 +8,19 @@ const snapshot = atom({ plugin: 'session-cards', key: 'snapshot' } as const, nul
 const REFRESH_MS = 5000
 const PADDING_X = 1
 const MAX_VALUE = 24
-const CARD_BG = '#1c1a18'
-const LABEL = '#9a958c'
-const CREAM = '#ece6d6'
-const BLUE = '#6f9ff0'
-const TAN = '#c8b08a'
-const TRACK = '#4a4640'
+const CARD_BG = '#2a2927'
+const LABEL = '#9d9db1'
+const VALUE = '#ffffff'
+const LINE = '#e5e6f2'
+const BLUE = '#6eb3ff'
+const PURPLE = '#c394ff'
+const GREEN = '#72c590'
+const YELLOW = '#f3d066'
+const ORANGE = '#fbaa60'
+const TRACK = '#3c3d4e'
 
 // progress (0 to 1) turns the top line into a bar.
-type Card = { label: string; value: string; accent: string; progress?: number }
+type Card = { label: string; value: string; line: string; valueColor?: string; progress?: number }
 
 export function displayModel(id: string): string {
   const match = /^claude-([a-z]+)-(\d+)-(\d+)/.exec(id)
@@ -57,23 +61,25 @@ export function filledCells(progress: number, width: number): number {
 
 function cards(s: Snapshot): Card[] {
   return [
-    { label: 'GIT', value: s.branch ?? 'no git', accent: CREAM },
-    { label: 'MODEL', value: displayModel(s.model), accent: BLUE },
-    { label: 'EFFORT', value: s.effort ?? '—', accent: TAN },
+    { label: 'git', value: s.branch ?? 'no git', line: LINE },
+    { label: 'model', value: displayModel(s.model), line: BLUE, valueColor: BLUE },
+    { label: 'effort', value: s.effort ?? '—', line: PURPLE, valueColor: PURPLE },
     {
-      label: 'CONTEXT',
+      label: 'context',
       value: `${compactTokens(s.context.tokens)}/${compactTokens(s.context.window)}, ${s.context.percent}%`,
-      accent: BLUE,
+      line: GREEN,
+      valueColor: GREEN,
       progress: s.context.tokens / s.context.window,
     },
-    { label: '5H LIMIT', value: limitValue(s.limits.fiveHour), accent: TAN, progress: (s.limits.fiveHour?.percent ?? 0) / 100 },
+    { label: '5h limit', value: limitValue(s.limits.fiveHour), line: YELLOW, valueColor: YELLOW, progress: (s.limits.fiveHour?.percent ?? 0) / 100 },
     {
-      label: 'WEEKLY LIMIT',
+      label: 'weekly limit',
       value: limitValue(s.limits.sevenDay),
-      accent: CREAM,
+      line: ORANGE,
+      valueColor: ORANGE,
       progress: (s.limits.sevenDay?.percent ?? 0) / 100,
     },
-    { label: 'COST', value: s.costUsd === null ? '—' : `$${s.costUsd.toFixed(2)}`, accent: TAN },
+    { label: 'cost', value: s.costUsd === null ? '—' : `$${s.costUsd.toFixed(2)}`, line: LINE },
   ]
 }
 
@@ -143,16 +149,16 @@ export const register: Register = on => {
     const width = Math.max(...shownCards.map(c => Math.max(c.label.length, c.value.length))) + 2 * PADDING_X
     return (
       <Box flexDirection="row" flexWrap="wrap" columnGap={1} width={e.props.bodyColumns}>
-        {shownCards.map(({ label, value, accent, progress = 1 }) => (
+        {shownCards.map(({ label, value, line, valueColor = VALUE, progress = 1 }) => (
           <Box flexDirection="column" width={width}>
             {/* A bottom-eighth bar in the row above sits right on the card's top edge. */}
             <Box flexDirection="row">
-              <Text color={accent}>{'▁'.repeat(filledCells(progress, width))}</Text>
+              <Text color={line}>{'▁'.repeat(filledCells(progress, width))}</Text>
               <Text color={TRACK}>{'▁'.repeat(width - filledCells(progress, width))}</Text>
             </Box>
             <Box flexDirection="column" backgroundColor={CARD_BG} paddingX={PADDING_X} paddingY={1}>
               <Text color={LABEL} backgroundColor={CARD_BG}>{label}</Text>
-              <Text color={accent} backgroundColor={CARD_BG}>{value}</Text>
+              <Text color={valueColor} backgroundColor={CARD_BG}>{value}</Text>
             </Box>
           </Box>
         ))}
