@@ -31,6 +31,30 @@ Type this at the prompt of a Claude Code terminal session:
 
 Answer `y` to add the marketplace and pick a scope. It starts working right away.
 
+### Turning cards off
+
+Open `/config` and type `session-cards` to filter the list:
+
+```
+  ╭─────────────────────────────────────────────────╮
+  │ ⌕ session-cards                                 │
+  ╰─────────────────────────────────────────────────╯
+
+  ❯ Show branch · session-cards             true
+    Show session name · session-cards       true
+    Show model card · session-cards         true
+    Show effort card · session-cards        true
+    Show context card · session-cards       true
+    Show startup card · session-cards       true
+    Show 5h limit card · session-cards      true
+    Show weekly limit card · session-cards  true
+    Show cost card · session-cards          true
+
+  Enter/Space to change · / to search · Esc to close
+```
+
+Move to a row and press Enter or Space to switch it between `true` and `false`. It applies right away, no restart needed.
+
 ### Notes
 
 Mods are early access in Claude Code and I built this one on 2.1.296, so a new release can break it. If something looks off, open an issue and I'll take a look.
