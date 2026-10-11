@@ -47,7 +47,7 @@ jobs:
           for (const { name, source } of plugins.filter(p => typeof p.source === 'string')) {
             const dir = source.replace(/^\.\//, '').replace(/\/$/, '')
             const manifest = `${dir}/.claude-plugin/plugin.json`
-            const touched = PLUGIN ? PLUGIN === name : changed.some(f => f.startsWith(`${dir}/`) && f !== manifest)
+            const touched = PLUGIN ? PLUGIN === name : changed.some(f => f.startsWith(`${dir}/`))
             if (!touched) continue
             const text = fs.readFileSync(manifest, 'utf8')
             const [major, minor, patch] = text.match(/"version"\s*:\s*"(\d+)\.(\d+)\.(\d+)"/).slice(1).map(Number)
