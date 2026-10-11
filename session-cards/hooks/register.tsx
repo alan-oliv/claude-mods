@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, SessionRateLimit, Settings } from 'claude-code'
+import type { ContextCategory, EngineInterface, Register, SessionRateLimit, Settings } from 'claude-code'
 
 import type { LimitWindow, Snapshot } from '../types'
 
@@ -17,7 +17,12 @@ const PURPLE = '#c394ff'
 const GREEN = '#72c590'
 const YELLOW = '#f3d066'
 const ORANGE = '#fbaa60'
+const RED = '#f47067'
 const TRACK = '#3c3d4e'
+const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+// Share of the window, in percent, where the startup turns heavy and where it is too much (a full bar).
+const STARTUP_HEAVY = 10
+const STARTUP_TOO_MUCH = 20
 
 // progress (0 to 1) turns the top line into a bar.
 type Card = { option: string; label: string; value: string; line: string; valueColor?: string; progress?: number }
@@ -55,14 +60,29 @@ export function limitValue(window: LimitWindow | null): string {
   return window.resetIn === null ? `${window.percent}%` : `${window.percent}% · ${window.resetIn}`
 }
 
+export function effortProgress(effort: string | null): number {
+  return (EFFORTS.indexOf(effort ?? '') + 1) / EFFORTS.length
+}
+
+export function startupColor(percent: number): string {
+  if (percent >= STARTUP_TOO_MUCH) return RED
+  return percent >= STARTUP_HEAVY ? YELLOW : GREEN
+}
+
+// Messages is the conversation; every other row in use was there before the first prompt.
+export function startupTokens(categories: readonly ContextCategory[]): number {
+  return categories.filter(c => c.kind === 'used' && c.name !== 'Messages').reduce((sum, c) => sum + c.tokens, 0)
+}
+
 export function filledCells(progress: number, width: number): number {
   return Math.min(width, Math.max(0, Math.round(progress * width)))
 }
 
 function cards(s: Snapshot): Card[] {
+  const startupPercent = ((s.startup ?? 0) / s.context.window) * 100
   return [
     { option: 'showModel', label: 'model', value: displayModel(s.model), line: BLUE, valueColor: BLUE },
-    { option: 'showEffort', label: 'effort', value: s.effort ?? '—', line: PURPLE, valueColor: PURPLE },
+    { option: 'showEffort', label: 'effort', value: s.effort ?? '—', line: PURPLE, valueColor: PURPLE, progress: effortProgress(s.effort) },
     {
       option: 'showContext',
       label: 'context',
@@ -70,6 +90,14 @@ function cards(s: Snapshot): Card[] {
       line: GREEN,
       valueColor: GREEN,
       progress: s.context.tokens / s.context.window,
+    },
+    {
+      option: 'showStartup',
+      label: 'startup',
+      value: s.startup === null ? '—' : `${compactTokens(s.startup)}, ${Math.round(startupPercent)}%`,
+      line: startupColor(startupPercent),
+      valueColor: startupColor(startupPercent),
+      progress: startupPercent / STARTUP_TOO_MUCH,
     },
     { option: 'showFiveHourLimit', label: '5h limit', value: limitValue(s.limits.fiveHour), line: YELLOW, valueColor: YELLOW, progress: (s.limits.fiveHour?.percent ?? 0) / 100 },
     {
@@ -116,11 +144,19 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
     context: { tokens: usage.context.tokens ?? 0, window: usage.context.window, percent: usage.context.percent ?? 0 },
     limits: { fiveHour: limitWindow(fiveHour, now), sevenDay: limitWindow(sevenDay, now) },
     costUsd: usage.cost?.usd ?? null,
+    startup,
   }
+}
+
+// Measured per turn, not on the timer: even the summary breakdown sizes every tool, skill and memory file.
+async function measureStartup($: EngineInterface) {
+  const { context } = await $.session.usage({ breakdown: 'summary' })
+  startup = context.breakdown ? startupTokens(context.breakdown.categories) : null
 }
 
 // Only classic hook inputs carry the name (/rename or --name), so a rename shows from the next prompt.
 let title: string | null = null
+let startup: number | null = null
 let shown = ''
 
 async function refresh($: EngineInterface) {
@@ -134,6 +170,7 @@ async function refresh($: EngineInterface) {
 export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     $.clock.every(REFRESH_MS, () => void refresh($))
+    await measureStartup($)
     await refresh($)
     return next(e)
   })
@@ -149,6 +186,7 @@ export const register: Register = (on, options) => {
   })
 
   on('turn.complete', async ($, e, next) => {
+    await measureStartup($)
     await refresh($)
     return next(e)
   })
