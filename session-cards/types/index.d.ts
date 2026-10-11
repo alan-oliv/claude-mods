@@ -1,9 +1,12 @@
 // resetIn is stored formatted, so a card redraws once a minute rather than on every refresh.
 export type LimitWindow = { percent: number; resetIn: string | null }
 
+export type DiffStat = { files: number; added: number; removed: number }
+
 export type Snapshot = {
   title: string | null
   branch: string | null
+  changes: DiffStat | null
   model: string
   effort: string | null
   context: { tokens: number; window: number; percent: number }
