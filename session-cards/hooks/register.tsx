@@ -144,12 +144,13 @@ export const register: Register = on => {
     if (e.props.hasSurvey || s === null) return next(e)
 
     const { Box, Text } = $.ui.resolve(e)
-    const shownCards = cards(s).map(card => ({ ...card, value: clip(card.value) }))
-    // One width for every card, so they line up as a grid.
-    const width = Math.max(...shownCards.map(c => Math.max(c.label.length, c.value.length))) + 2 * PADDING_X
+    const shownCards = cards(s).map(card => {
+      const value = clip(card.value)
+      return { ...card, value, width: Math.max(card.label.length, value.length) + 2 * PADDING_X }
+    })
     return (
       <Box flexDirection="row" flexWrap="wrap" columnGap={1} width={e.props.bodyColumns}>
-        {shownCards.map(({ label, value, line, valueColor = VALUE, progress = 1 }) => (
+        {shownCards.map(({ label, value, width, line, valueColor = VALUE, progress = 1 }) => (
           <Box flexDirection="column" width={width}>
             {/* A bottom-eighth bar in the row above sits right on the card's top edge. */}
             <Box flexDirection="row">
