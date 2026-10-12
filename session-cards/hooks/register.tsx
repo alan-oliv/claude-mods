@@ -23,6 +23,9 @@ const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
 // Share of the window, in percent, where the startup turns heavy and where it is too much (a full bar).
 const STARTUP_HEAVY = 10
 const STARTUP_TOO_MUCH = 20
+// Percent of the monthly spend limit where the card turns yellow, then red.
+const LIMIT_WARN = 60
+const LIMIT_DANGER = 85
 
 // progress (0 to 1) turns the top line into a bar.
 type Card = { option: string; label: string; value: string; line: string; valueColor?: string; progress?: number }
@@ -69,6 +72,11 @@ export function startupColor(percent: number): string {
   return percent >= STARTUP_HEAVY ? YELLOW : GREEN
 }
 
+export function limitColor(percent: number): string {
+  if (percent >= LIMIT_DANGER) return RED
+  return percent >= LIMIT_WARN ? YELLOW : GREEN
+}
+
 // Messages is the conversation; every other row in use was there before the first prompt.
 export function startupTokens(categories: readonly ContextCategory[]): number {
   return categories.filter(c => c.kind === 'used' && c.name !== 'Messages').reduce((sum, c) => sum + c.tokens, 0)
@@ -90,6 +98,7 @@ export function filledCells(progress: number, width: number): number {
 
 function cards(s: Snapshot): Card[] {
   const startupPercent = ((s.startup ?? 0) / s.context.window) * 100
+  const monthlyPercent = s.limits.monthly?.percent ?? 0
   return [
     { option: 'showModel', label: 'model', value: displayModel(s.model), line: BLUE, valueColor: BLUE },
     { option: 'showEffort', label: 'effort', value: s.effort ?? '—', line: PURPLE, valueColor: PURPLE, progress: effortProgress(s.effort) },
@@ -117,6 +126,14 @@ function cards(s: Snapshot): Card[] {
       line: ORANGE,
       valueColor: ORANGE,
       progress: (s.limits.sevenDay?.percent ?? 0) / 100,
+    },
+    {
+      option: 'showMonthlyLimit',
+      label: 'monthly limit',
+      value: limitValue(s.limits.monthly),
+      line: limitColor(monthlyPercent),
+      valueColor: limitColor(monthlyPercent),
+      progress: monthlyPercent / 100,
     },
     { option: 'showCost', label: 'cost', value: s.costUsd === null ? '—' : `$${s.costUsd.toFixed(2)}`, line: LINE },
   ]
@@ -147,6 +164,7 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
   // Empty until an API response reports the windows, and off a subscription.
   const fiveHour = usage.rateLimits.find(limit => limit.kind === 'five_hour')
   const sevenDay = usage.rateLimits.find(limit => limit.kind === 'seven_day')
+  const monthly = usage.rateLimits.find(limit => limit.kind === 'spend_limit')
   return {
     title,
     branch: head.exitCode === 0 ? head.stdout.trim() : null,
@@ -155,7 +173,7 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
     effort: resolveEffort(settings, model),
     // tokens and percent are absent until the window's first response.
     context: { tokens: usage.context.tokens ?? 0, window: usage.context.window, percent: usage.context.percent ?? 0 },
-    limits: { fiveHour: limitWindow(fiveHour, now), sevenDay: limitWindow(sevenDay, now) },
+    limits: { fiveHour: limitWindow(fiveHour, now), sevenDay: limitWindow(sevenDay, now), monthly: limitWindow(monthly, now) },
     costUsd: usage.cost?.usd ?? null,
     startup,
   }

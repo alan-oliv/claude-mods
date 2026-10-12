@@ -10,7 +10,7 @@ export type Snapshot = {
   model: string
   effort: string | null
   context: { tokens: number; window: number; percent: number }
-  limits: { fiveHour: LimitWindow | null; sevenDay: LimitWindow | null }
+  limits: { fiveHour: LimitWindow | null; sevenDay: LimitWindow | null; monthly: LimitWindow | null }
   costUsd: number | null
   startup: number | null
 }
