@@ -55,8 +55,8 @@ test('colors startup green, then yellow from 10% of the window, then red from 20
   expect([startupColor(3), startupColor(10), startupColor(19.9), startupColor(20)]).toEqual(['#72c590', '#f3d066', '#f3d066', '#f47067'])
 })
 
-async function mountBand($: Engine, on: On) {
-  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
+async function mountBand($: Engine, on: On, band = 'Box') {
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => band === 'Box' ? $.ui.resolve(e).Box({}) : $.ui.resolve(e).Text({ children: band }))
   on('process.run', (_, e) => {
     const stdout = e.argv.includes('diff') ? '14\t10\tREADME.md\n-\t-\tdocs/hero.png\n' : 'main\n'
     return { value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
@@ -94,4 +94,10 @@ test('leaves out the branch, the session name and the cards the user turned off'
   expect(await ui.find({ type: 'Text', text: 'adding-session-name' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: 'model' })).toBe(undefined)
   expect((await ui.find({ type: 'Text', text: 'effort' }))?.text).toBe('effort')
+})
+
+test('draws the bands beneath it under its own cards', async ($, on) => {
+  const ui = await mountBand($, on, 'other band')
+  const texts = (await ui.findAll({ type: 'Text' })).map(text => text.text)
+  expect(texts[texts.length - 1]).toBe('other band')
 })

@@ -209,7 +209,7 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const s = await read($, snapshot)
     if (e.props.hasSurvey || s === null) return next(e)
-    // Other mods' bands go first; returning only the cards dropped them.
+    // Other mods' bands go under the cards; returning only the cards dropped them.
     const rest = await next(e)
 
     const { Box, Text } = $.ui.resolve(e)
@@ -221,7 +221,6 @@ export const register: Register = (on, options) => {
     const session = options.showSession ? s.title : null
     return (
       <Box flexDirection="column" width={e.props.bodyColumns}>
-        {rest}
         {(branch || session) && (
           <Box marginTop={2} columnGap={1}>
             {branch && (
@@ -259,6 +258,7 @@ export const register: Register = (on, options) => {
             </Box>
           ))}
         </Box>
+        {rest}
       </Box>
     )
   })
