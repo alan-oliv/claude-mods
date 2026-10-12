@@ -6,7 +6,7 @@ Claude Code mods I made for my own setup.
 
 ### Session stats
 
-![session-cards above the Claude Code prompt](docs/session-cards-hero-linear.png)
+![session-cards above the Claude Code prompt](docs/session-stats.png)
 
 - branch and session sit on one line above the cards. branch is a badge with the current git branch, next to a badge with the files and lines changed since the last commit. session is the name from `/rename` or `--name`. After a `/rename` the name updates on your next prompt
 - model is the session model
