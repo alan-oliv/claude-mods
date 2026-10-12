@@ -15,6 +15,7 @@ Claude Code mods I made for my own setup.
 - startup is how much of the context window the session takes before your first prompt: system prompt, tools, MCP, skills, agents and memory files. It's measured again after each turn, so an MCP server that connects late shows up. It's green under 10% of the window, yellow up to 20% and red past that, when the bar is full
 - 5h limit is how much of the 5 hour window you used and when it resets, with a bar too
 - weekly limit is the same for the weekly window
+- monthly limit is how much of your monthly spend limit you used and when it resets. The bar fills with usage and goes green, then yellow from 60% and red from 85%. It only has a value where a spend limit is set
 - cost is the session cost in dollars, same number as `/cost`. On Max it's just for reference
 
 Everything refreshes every 5 seconds and after each turn. When the terminal is narrow the cards wrap to the next line and keep their width.
@@ -48,6 +49,7 @@ Open `/config` and type `session-cards` to filter the list:
     Show startup card · session-cards       true
     Show 5h limit card · session-cards      true
     Show weekly limit card · session-cards  true
+    Show monthly limit card · session-cards true
     Show cost card · session-cards          true
 
   Enter/Space to change · / to search · Esc to close

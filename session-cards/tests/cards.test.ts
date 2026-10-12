@@ -2,7 +2,7 @@ import type { On } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 
-import { compactTokens, displayModel, duration, effortProgress, filledCells, limitValue, resolveEffort, startupColor, startupTokens } from '../hooks/register'
+import { compactTokens, displayModel, duration, effortProgress, filledCells, limitColor, limitValue, resolveEffort, startupColor, startupTokens } from '../hooks/register'
 
 test('turns model ids into display names and leaves other names alone', async () => {
   expect(displayModel('claude-opus-5-5')).toBe('Opus 5.5')
@@ -31,6 +31,12 @@ test('words a limit card from its window: percent used, then time to reset', asy
   expect(limitValue({ percent: 1, resetIn: '4h 8m' })).toBe('1% · 4h 8m')
   expect(limitValue({ percent: 45, resetIn: null })).toBe('45%')
   expect(limitValue(null)).toBe('—')
+})
+
+test('colors the monthly limit green, then yellow, then red as it fills', async () => {
+  expect([limitColor(0), limitColor(59), limitColor(60), limitColor(85), limitColor(120)]).toEqual([
+    '#72c590', '#72c590', '#f3d066', '#f47067', '#f47067',
+  ])
 })
 
 test('counts startup as every row in use but the conversation', async () => {

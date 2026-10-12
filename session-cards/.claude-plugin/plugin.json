@@ -55,6 +55,12 @@
       "description": "Usage of the weekly window and when it resets",
       "default": true
     },
+    "showMonthlyLimit": {
+      "type": "boolean",
+      "title": "Show monthly limit card",
+      "description": "Usage of the monthly spend limit and when it resets",
+      "default": true
+    },
     "showCost": {
       "type": "boolean",
       "title": "Show cost card",
