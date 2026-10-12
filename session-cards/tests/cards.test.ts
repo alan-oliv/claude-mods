@@ -56,6 +56,7 @@ test('colors startup green, then yellow from 10% of the window, then red from 20
 })
 
 async function mountBand($: Engine, on: On) {
+  on('ui.render', { component: 'AbovePrompt' }, ($, e) => $.ui.resolve(e).Box({}))
   on('process.run', (_, e) => {
     const stdout = e.argv.includes('diff') ? '14\t10\tREADME.md\n-\t-\tdocs/hero.png\n' : 'main\n'
     return { value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
