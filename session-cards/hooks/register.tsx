@@ -20,6 +20,15 @@ const ORANGE = '#fbaa60'
 const RED = '#f47067'
 const TRACK = '#3c3d4e'
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max']
+
+// ok, warn and bad color the startup and monthly cards by how full they are.
+type Palette = { model: string; effort: string; context: string; fiveHour: string; weekly: string; ok: string; warn: string; bad: string; branch: string; added: string; removed: string }
+export const PALETTES: Record<string, Palette> = {
+  colorful: { model: BLUE, effort: PURPLE, context: GREEN, fiveHour: YELLOW, weekly: ORANGE, ok: GREEN, warn: YELLOW, bad: RED, branch: GREEN, added: GREEN, removed: RED },
+  muted: { model: '#8fa3b8', effort: '#a89bba', context: '#8fb39d', fiveHour: '#c2b48a', weekly: '#c2a48a', ok: '#8fb39d', warn: '#c2b48a', bad: '#c08a86', branch: '#8fb39d', added: '#8fb39d', removed: '#c08a86' },
+  mono: { model: LINE, effort: LINE, context: LINE, fiveHour: LINE, weekly: LINE, ok: LINE, warn: LINE, bad: RED, branch: LINE, added: LINE, removed: LINE },
+  'mono-diff': { model: LINE, effort: LINE, context: LINE, fiveHour: LINE, weekly: LINE, ok: LINE, warn: LINE, bad: RED, branch: LINE, added: '#8fb39d', removed: '#c08a86' },
+}
 // Share of the window, in percent, where the startup turns heavy and where it is too much (a full bar).
 const STARTUP_HEAVY = 10
 const STARTUP_TOO_MUCH = 20
@@ -67,14 +76,14 @@ export function effortProgress(effort: string | null): number {
   return (EFFORTS.indexOf(effort ?? '') + 1) / EFFORTS.length
 }
 
-export function startupColor(percent: number): string {
-  if (percent >= STARTUP_TOO_MUCH) return RED
-  return percent >= STARTUP_HEAVY ? YELLOW : GREEN
+export function startupColor(percent: number, p: Palette): string {
+  if (percent >= STARTUP_TOO_MUCH) return p.bad
+  return percent >= STARTUP_HEAVY ? p.warn : p.ok
 }
 
-export function limitColor(percent: number): string {
-  if (percent >= LIMIT_DANGER) return RED
-  return percent >= LIMIT_WARN ? YELLOW : GREEN
+export function limitColor(percent: number, p: Palette): string {
+  if (percent >= LIMIT_DANGER) return p.bad
+  return percent >= LIMIT_WARN ? p.warn : p.ok
 }
 
 // Messages is the conversation; every other row in use was there before the first prompt.
@@ -96,43 +105,43 @@ export function filledCells(progress: number, width: number): number {
   return Math.min(width, Math.max(0, Math.round(progress * width)))
 }
 
-function cards(s: Snapshot): Card[] {
+function cards(s: Snapshot, p: Palette): Card[] {
   const startupPercent = ((s.startup ?? 0) / s.context.window) * 100
   const monthlyPercent = s.limits.monthly?.percent ?? 0
   return [
-    { option: 'showModel', label: 'model', value: displayModel(s.model), line: BLUE, valueColor: BLUE },
-    { option: 'showEffort', label: 'effort', value: s.effort ?? '—', line: PURPLE, valueColor: PURPLE, progress: effortProgress(s.effort) },
+    { option: 'showModel', label: 'model', value: displayModel(s.model), line: p.model, valueColor: p.model },
+    { option: 'showEffort', label: 'effort', value: s.effort ?? '—', line: p.effort, valueColor: p.effort, progress: effortProgress(s.effort) },
     {
       option: 'showContext',
       label: 'context',
       value: `${compactTokens(s.context.tokens)}/${compactTokens(s.context.window)}, ${s.context.percent}%`,
-      line: GREEN,
-      valueColor: GREEN,
+      line: p.context,
+      valueColor: p.context,
       progress: s.context.tokens / s.context.window,
     },
     {
       option: 'showStartup',
       label: 'startup',
       value: s.startup === null ? '—' : `${compactTokens(s.startup)}, ${Math.round(startupPercent)}%`,
-      line: startupColor(startupPercent),
-      valueColor: startupColor(startupPercent),
+      line: startupColor(startupPercent, p),
+      valueColor: startupColor(startupPercent, p),
       progress: startupPercent / STARTUP_TOO_MUCH,
     },
-    { option: 'showFiveHourLimit', label: '5h limit', value: limitValue(s.limits.fiveHour), line: YELLOW, valueColor: YELLOW, progress: (s.limits.fiveHour?.percent ?? 0) / 100 },
+    { option: 'showFiveHourLimit', label: '5h limit', value: limitValue(s.limits.fiveHour), line: p.fiveHour, valueColor: p.fiveHour, progress: (s.limits.fiveHour?.percent ?? 0) / 100 },
     {
       option: 'showWeeklyLimit',
       label: 'weekly limit',
       value: limitValue(s.limits.sevenDay),
-      line: ORANGE,
-      valueColor: ORANGE,
+      line: p.weekly,
+      valueColor: p.weekly,
       progress: (s.limits.sevenDay?.percent ?? 0) / 100,
     },
     {
       option: 'showMonthlyLimit',
       label: 'monthly limit',
       value: limitValue(s.limits.monthly),
-      line: limitColor(monthlyPercent),
-      valueColor: limitColor(monthlyPercent),
+      line: limitColor(monthlyPercent, p),
+      valueColor: limitColor(monthlyPercent, p),
       progress: monthlyPercent / 100,
     },
     { option: 'showCost', label: 'cost', value: s.costUsd === null ? '—' : `$${s.costUsd.toFixed(2)}`, line: LINE },
@@ -229,7 +238,8 @@ export const register: Register = (on, options) => {
     if (e.props.hasSurvey || s === null) return next(e)
 
     const { Box, Text } = $.ui.resolve(e)
-    const shownCards = cards(s).filter(card => options[card.option]).map(card => {
+    const palette = PALETTES[String(options.palette)] ?? PALETTES.colorful!
+    const shownCards = cards(s, palette).filter(card => options[card.option]).map(card => {
       const value = clip(card.value)
       return { ...card, value, width: Math.max(card.label.length, value.length) + 2 * PADDING_X }
     })
@@ -241,14 +251,14 @@ export const register: Register = (on, options) => {
           <Box marginTop={2} columnGap={1}>
             {branch && (
               <Box backgroundColor={CARD_BG} paddingX={PADDING_X} flexShrink={0}>
-                <Text color={GREEN} backgroundColor={CARD_BG}>{`⎇ ${branch}`}</Text>
+                <Text color={palette.branch} backgroundColor={CARD_BG}>{`⎇ ${branch}`}</Text>
               </Box>
             )}
             {branch && s.changes && (
               <Box backgroundColor={CARD_BG} paddingRight={PADDING_X} flexShrink={0}>
                 <Text color={LABEL} backgroundColor={CARD_BG}>{`🗋 ${s.changes.files} • `}</Text>
-                <Text color={GREEN} backgroundColor={CARD_BG}>{`+${s.changes.added} `}</Text>
-                <Text color={RED} backgroundColor={CARD_BG}>{`-${s.changes.removed}`}</Text>
+                <Text color={palette.added} backgroundColor={CARD_BG}>{`+${s.changes.added} `}</Text>
+                <Text color={palette.removed} backgroundColor={CARD_BG}>{`-${s.changes.removed}`}</Text>
               </Box>
             )}
             {session && (

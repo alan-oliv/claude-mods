@@ -20,7 +20,14 @@ Claude Code mods I made for my own setup.
 
 Everything refreshes every 5 seconds and after each turn. When the terminal is narrow the cards wrap to the next line and keep their width.
 
-Every card, the branch and the session name can be turned off in `/config`, they all start on.
+Every card, the branch and the session name can be turned off in `/config`, they all start on. The colors come from a palette you pick there too:
+
+- colorful is a color per card, the default
+- muted is the same colors toned down
+- mono is one light grey for everything
+- mono-diff is mono with a muted green and red on the file changes badge
+
+A startup past 20% and a monthly limit past 85% stay red in every palette.
 
 ### Install
 
@@ -32,7 +39,7 @@ Type this at the prompt of a Claude Code terminal session:
 
 Answer `y` to add the marketplace and pick a scope. It starts working right away.
 
-### Turning cards off
+### Turning cards off and picking a palette
 
 Open `/config` and type `session-cards` to filter the list:
 
@@ -41,7 +48,8 @@ Open `/config` and type `session-cards` to filter the list:
   │ ⌕ session-cards                                 │
   ╰─────────────────────────────────────────────────╯
 
-  ❯ Show branch · session-cards             true
+  ❯ Palette · session-cards                 colorful
+    Show branch · session-cards             true
     Show session name · session-cards       true
     Show model card · session-cards         true
     Show effort card · session-cards        true
@@ -55,7 +63,7 @@ Open `/config` and type `session-cards` to filter the list:
   Enter/Space to change · / to search · Esc to close
 ```
 
-Move to a row and press Enter or Space to switch it between `true` and `false`. It applies right away, no restart needed.
+Move to a row and press Enter or Space to switch it between `true` and `false`, or to pick the palette. It applies right away, no restart needed.
 
 ### Notes
 
