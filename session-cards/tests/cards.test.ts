@@ -2,7 +2,7 @@ import type { On } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 
-import { compactTokens, displayModel, duration, effortProgress, filledCells, limitColor, limitValue, resolveEffort, startupColor, startupTokens } from '../hooks/register'
+import { compactTokens, displayModel, duration, effortProgress, filledCells, limitColor, limitValue, PALETTES, resolveEffort, startupColor, startupTokens } from '../hooks/register'
 
 test('turns model ids into display names and leaves other names alone', async () => {
   expect(displayModel('claude-opus-5-5')).toBe('Opus 5.5')
@@ -34,7 +34,8 @@ test('words a limit card from its window: percent used, then time to reset', asy
 })
 
 test('colors the monthly limit green, then yellow, then red as it fills', async () => {
-  expect([limitColor(0), limitColor(59), limitColor(60), limitColor(85), limitColor(120)]).toEqual([
+  const p = PALETTES.colorful!
+  expect([limitColor(0, p), limitColor(59, p), limitColor(60, p), limitColor(85, p), limitColor(120, p)]).toEqual([
     '#72c590', '#72c590', '#f3d066', '#f47067', '#f47067',
   ])
 })
@@ -58,7 +59,13 @@ test('fills the effort bar by level, low to max', async () => {
 })
 
 test('colors startup green, then yellow from 10% of the window, then red from 20%', async () => {
-  expect([startupColor(3), startupColor(10), startupColor(19.9), startupColor(20)]).toEqual(['#72c590', '#f3d066', '#f3d066', '#f47067'])
+  const p = PALETTES.colorful!
+  expect([startupColor(3, p), startupColor(10, p), startupColor(19.9, p), startupColor(20, p)]).toEqual(['#72c590', '#f3d066', '#f3d066', '#f47067'])
+})
+
+test('mono keeps only the red for a startup that is too much', async () => {
+  const p = PALETTES.mono!
+  expect([startupColor(3, p), startupColor(19.9, p), startupColor(20, p)]).toEqual(['#e5e6f2', '#e5e6f2', '#f47067'])
 })
 
 async function mountBand($: Engine, on: On) {

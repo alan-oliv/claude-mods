@@ -7,6 +7,13 @@
     "name": "alan-oliv"
   },
   "userConfig": {
+    "palette": {
+      "type": "string",
+      "title": "Palette",
+      "description": "colorful is a color per card, muted the same colors toned down, mono one light grey for everything, mono-diff the same with muted green and red on the file changes",
+      "options": ["colorful", "muted", "mono", "mono-diff"],
+      "default": "colorful"
+    },
     "showBranch": {
       "type": "boolean",
       "title": "Show branch",
