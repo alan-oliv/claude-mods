@@ -1,6 +1,6 @@
 {
   "name": "session-cards",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Session stats above the prompt: repo folder, branch and session name, then cards for model, effort, context, startup, limits and cost",
   "types": "./types/index.d.ts",
   "author": {
