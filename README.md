@@ -8,7 +8,7 @@ Claude Code mods I made for my own setup.
 
 ![session-cards above the Claude Code prompt](docs/session-stats.png)
 
-- branch and session sit on one line above the cards. branch is a badge with the current git branch, next to a badge with the files and lines changed since the last commit. session is the name from `/rename` or `--name`. After a `/rename` the name updates on your next prompt
+- branch and session sit on one line above the cards. branch is a badge with the repo folder and the current git branch, next to a badge with the files and lines changed since the last commit. session is the name from `/rename` or `--name`. After a `/rename` the name updates on your next prompt
 - model is the session model
 - effort is the effort level from your settings, the model setting first and then the global one. The bar fills by level, from low to max
 - context is how full the context window is, the top line works as a progress bar
