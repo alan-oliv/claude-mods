@@ -70,7 +70,7 @@ test('mono keeps only the red for a startup that is too much', async () => {
 
 async function mountBand($: Engine, on: On) {
   on('process.run', (_, e) => {
-    const stdout = e.argv.includes('diff') ? '14\t10\tREADME.md\n-\t-\tdocs/hero.png\n' : 'main\n'
+    const stdout = e.argv.includes('diff') ? '14\t10\tREADME.md\n-\t-\tdocs/hero.png\n' : '/code/claude-mods\nmain\n'
     return { value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
   on('session.model', () => ({ value: 'claude-opus-5-5' }))
@@ -91,16 +91,17 @@ async function mountBand($: Engine, on: On) {
   })
 }
 
-test('heads the cards with a branch badge, a badge of files and lines changed, then the session name', async ($, on) => {
+test('heads the cards with a badge of the repo folder and branch, a badge of files and lines changed, then the session name', async ($, on) => {
   const ui = await mountBand($, on)
-  expect((await ui.findAll({ type: 'Text' })).map(text => text.text).slice(0, 6)).toEqual([
-    '⎇ main', '🗋 2 • ', '+14 ', '-10', 'session: ', 'adding-session-name',
+  expect((await ui.findAll({ type: 'Text' })).map(text => text.text).slice(0, 7)).toEqual([
+    'claude-mods ', '⎇ main', '🗋 2 • ', '+14 ', '-10', 'session: ', 'adding-session-name',
   ])
   expect(await ui.find({ type: 'Text', text: 'git' })).toBe(undefined)
 })
 
-test('leaves out the branch, the session name and the cards the user turned off', { options: { showBranch: false, showSession: false, showModel: false } }, async ($, on) => {
+test('leaves out the folder and branch, the session name and the cards the user turned off', { options: { showBranch: false, showSession: false, showModel: false } }, async ($, on) => {
   const ui = await mountBand($, on)
+  expect(await ui.find({ type: 'Text', text: 'claude-mods ' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: '⎇ main' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: '+14 ' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: 'adding-session-name' })).toBe(undefined)

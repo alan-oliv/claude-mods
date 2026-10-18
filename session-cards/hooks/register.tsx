@@ -162,7 +162,7 @@ function limitWindow(limit: SessionRateLimit | undefined, now: number): LimitWin
 
 async function readSnapshot($: EngineInterface): Promise<Snapshot> {
   const [head, diff, model, settings, usage, now] = await Promise.all([
-    $.process.run(['git', 'rev-parse', '--abbrev-ref', 'HEAD']),
+    $.process.run(['git', 'rev-parse', '--show-toplevel', '--abbrev-ref', 'HEAD']),
     // Without --no-optional-locks, diff rewrites the index every refresh and can collide with the user's own git.
     $.process.run(['git', '--no-optional-locks', 'diff', 'HEAD', '--numstat']),
     $.session.model(),
@@ -174,9 +174,12 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
   const fiveHour = usage.rateLimits.find(limit => limit.kind === 'five_hour')
   const sevenDay = usage.rateLimits.find(limit => limit.kind === 'seven_day')
   const monthly = usage.rateLimits.find(limit => limit.kind === 'spend_limit')
+  const [toplevel, branch] = head.exitCode === 0 ? head.stdout.trim().split('\n') : []
   return {
     title,
-    branch: head.exitCode === 0 ? head.stdout.trim() : null,
+    // The repo root's name, not the cwd's, so a session in a subfolder still says which repo it is in.
+    folder: toplevel?.split('/').pop() ?? null,
+    branch: branch ?? null,
     changes: diff.exitCode === 0 ? diffStat(diff.stdout) : null,
     model,
     effort: resolveEffort(settings, model),
@@ -251,6 +254,7 @@ export const register: Register = (on, options) => {
           <Box marginTop={2} columnGap={1}>
             {branch && (
               <Box backgroundColor={CARD_BG} paddingX={PADDING_X} flexShrink={0}>
+                {s.folder && <Text color={VALUE} backgroundColor={CARD_BG}>{`${s.folder} `}</Text>}
                 <Text color={palette.branch} backgroundColor={CARD_BG}>{`⎇ ${branch}`}</Text>
               </Box>
             )}

@@ -1,7 +1,7 @@
 {
   "name": "session-cards",
   "version": "0.2.6",
-  "description": "Session stats above the prompt: branch and session name, then cards for model, effort, context, startup, limits and cost",
+  "description": "Session stats above the prompt: repo folder, branch and session name, then cards for model, effort, context, startup, limits and cost",
   "types": "./types/index.d.ts",
   "author": {
     "name": "alan-oliv"
@@ -17,7 +17,7 @@
     "showBranch": {
       "type": "boolean",
       "title": "Show branch",
-      "description": "The current git branch, above the cards",
+      "description": "The repo folder and current git branch, above the cards",
       "default": true
     },
     "showSession": {
