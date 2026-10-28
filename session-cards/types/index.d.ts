@@ -5,6 +5,7 @@ export type DiffStat = { files: number; added: number; removed: number }
 
 export type Snapshot = {
   title: string | null
+  account: string | null
   folder: string | null
   branch: string | null
   changes: DiffStat | null

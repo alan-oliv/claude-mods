@@ -161,7 +161,7 @@ function limitWindow(limit: SessionRateLimit | undefined, now: number): LimitWin
 }
 
 async function readSnapshot($: EngineInterface): Promise<Snapshot> {
-  const [head, diff, model, settings, usage, now] = await Promise.all([
+  const [head, diff, model, settings, usage, now, cwd] = await Promise.all([
     $.process.run(['git', 'rev-parse', '--show-toplevel', '--abbrev-ref', 'HEAD']),
     // Without --no-optional-locks, diff rewrites the index every refresh and can collide with the user's own git.
     $.process.run(['git', '--no-optional-locks', 'diff', 'HEAD', '--numstat']),
@@ -169,6 +169,7 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
     $.settings.read(),
     $.session.usage(),
     $.clock.now(),
+    $.session.cwd(),
   ])
   // Empty until an API response reports the windows, and off a subscription.
   const fiveHour = usage.rateLimits.find(limit => limit.kind === 'five_hour')
@@ -177,8 +178,9 @@ async function readSnapshot($: EngineInterface): Promise<Snapshot> {
   const [toplevel, branch] = head.exitCode === 0 ? head.stdout.trim().split('\n') : []
   return {
     title,
-    // The repo root's name, not the cwd's, so a session in a subfolder still says which repo it is in.
-    folder: toplevel?.split('/').pop() ?? null,
+    account,
+    // The repo root's name, not the cwd's, so a session in a subfolder still says which repo it is in. Outside a repo, the cwd's.
+    folder: (toplevel ?? cwd).split('/').pop() || null,
     branch: branch ?? null,
     changes: diff.exitCode === 0 ? diffStat(diff.stdout) : null,
     model,
@@ -197,9 +199,22 @@ async function measureStartup($: EngineInterface) {
   startup = context.breakdown ? startupTokens(context.breakdown.categories) : null
 }
 
+// Account sits in the login record, not behind $.session.identity(), which only an organization's managed mod may call.
+async function readAccount($: EngineInterface): Promise<string | null> {
+  const dir = (await $.env.get('CLAUDE_CONFIG_DIR')) ?? (await $.env.get('HOME'))
+  if (!dir) return null
+  try {
+    const login = JSON.parse(String(await $.fs.read(`${dir}/.claude.json`)))
+    return login.oauthAccount?.emailAddress ?? null
+  } catch {
+    return null
+  }
+}
+
 // Only classic hook inputs carry the name (/rename or --name), so a rename shows from the next prompt.
 let title: string | null = null
 let startup: number | null = null
+let account: string | null = null
 let shown = ''
 
 async function refresh($: EngineInterface) {
@@ -215,6 +230,7 @@ export const register: Register = (on, options) => {
     // A reload starts the module over and classic.SessionStart does not fire again, so take the name from the last snapshot.
     title ??= (await read($, snapshot))?.title ?? null
     $.clock.every(REFRESH_MS, () => void refresh($))
+    account = await readAccount($)
     await measureStartup($)
     await refresh($)
     return next(e)
@@ -246,23 +262,31 @@ export const register: Register = (on, options) => {
       const value = clip(card.value)
       return { ...card, value, width: Math.max(card.label.length, value.length) + 2 * PADDING_X }
     })
+    const folder = options.showBranch ? s.folder : null
     const branch = options.showBranch ? s.branch : null
+    const account = options.showAccount ? s.account : null
     const session = options.showSession ? s.title : null
     return (
       <Box flexDirection="column" width={e.props.bodyColumns}>
-        {(branch || session) && (
+        {(folder || account || session) && (
           <Box marginTop={2} columnGap={1}>
-            {branch && (
+            {folder && (
               <Box backgroundColor={CARD_BG} paddingX={PADDING_X} flexShrink={0}>
-                {s.folder && <Text color={VALUE} backgroundColor={CARD_BG}>{`${s.folder} `}</Text>}
-                <Text color={palette.branch} backgroundColor={CARD_BG}>{`⎇ ${branch}`}</Text>
+                <Text color={VALUE} backgroundColor={CARD_BG}>{branch ? `${folder} ` : folder}</Text>
+                {branch && <Text color={palette.branch} backgroundColor={CARD_BG}>{`⎇ ${branch}`}</Text>}
               </Box>
             )}
-            {branch && s.changes && (
+            {folder && s.changes && (
               <Box backgroundColor={CARD_BG} paddingRight={PADDING_X} flexShrink={0}>
                 <Text color={LABEL} backgroundColor={CARD_BG}>{`🗋 ${s.changes.files} • `}</Text>
                 <Text color={palette.added} backgroundColor={CARD_BG}>{`+${s.changes.added} `}</Text>
                 <Text color={palette.removed} backgroundColor={CARD_BG}>{`-${s.changes.removed}`}</Text>
+              </Box>
+            )}
+            {account && (
+              <Box flexShrink={0}>
+                <Text color={LABEL}>account: </Text>
+                <Text color={VALUE}>{account}</Text>
               </Box>
             )}
             {session && (
