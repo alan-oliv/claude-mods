@@ -68,11 +68,14 @@ test('mono keeps only the red for a startup that is too much', async () => {
   expect([startupColor(3, p), startupColor(19.9, p), startupColor(20, p)]).toEqual(['#e5e6f2', '#e5e6f2', '#f47067'])
 })
 
-async function mountBand($: Engine, on: On) {
+async function mountBand($: Engine, on: On, { isRepo = true } = {}) {
   on('process.run', (_, e) => {
     const stdout = e.argv.includes('diff') ? '14\t10\tREADME.md\n-\t-\tdocs/hero.png\n' : '/code/claude-mods\nmain\n'
-    return { value: { exitCode: 0, stdout, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    return { value: { exitCode: isRepo ? 0 : 128, stdout: isRepo ? stdout : '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
   })
+  on('session.cwd', () => ({ value: '/scratch/notes' }))
+  on('env.get', (_, e) => ({ value: e.name === 'HOME' ? '/home/alan' : undefined }))
+  on('fs.read', () => ({ value: JSON.stringify({ oauthAccount: { emailAddress: 'alan@example.com' } }) }))
   on('session.model', () => ({ value: 'claude-opus-5-5' }))
   on('settings.read', () => ({ value: {} }))
   on('session.usage', () => ({ value: { startedAt: 0, context: { window: 200_000 }, rateLimits: [] } }))
@@ -93,17 +96,23 @@ async function mountBand($: Engine, on: On) {
 
 test('heads the cards with a badge of the repo folder and branch, a badge of files and lines changed, then the session name', async ($, on) => {
   const ui = await mountBand($, on)
-  expect((await ui.findAll({ type: 'Text' })).map(text => text.text).slice(0, 7)).toEqual([
-    'claude-mods ', '⎇ main', '🗋 2 • ', '+14 ', '-10', 'session: ', 'adding-session-name',
+  expect((await ui.findAll({ type: 'Text' })).map(text => text.text).slice(0, 9)).toEqual([
+    'claude-mods ', '⎇ main', '🗋 2 • ', '+14 ', '-10', 'account: ', 'alan@example.com', 'session: ', 'adding-session-name',
   ])
   expect(await ui.find({ type: 'Text', text: 'git' })).toBe(undefined)
 })
 
-test('leaves out the folder and branch, the session name and the cards the user turned off', { options: { showBranch: false, showSession: false, showModel: false } }, async ($, on) => {
+test('names the working folder alone when it is not in a repo', async ($, on) => {
+  const ui = await mountBand($, on, { isRepo: false })
+  expect((await ui.findAll({ type: 'Text' })).map(text => text.text).slice(0, 3)).toEqual(['notes', 'account: ', 'alan@example.com'])
+})
+
+test('leaves out the folder and branch, the account, the session name and the cards the user turned off', { options: { showBranch: false, showAccount: false, showSession: false, showModel: false } }, async ($, on) => {
   const ui = await mountBand($, on)
   expect(await ui.find({ type: 'Text', text: 'claude-mods ' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: '⎇ main' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: '+14 ' })).toBe(undefined)
+  expect(await ui.find({ type: 'Text', text: 'alan@example.com' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: 'adding-session-name' })).toBe(undefined)
   expect(await ui.find({ type: 'Text', text: 'model' })).toBe(undefined)
   expect((await ui.find({ type: 'Text', text: 'effort' }))?.text).toBe('effort')

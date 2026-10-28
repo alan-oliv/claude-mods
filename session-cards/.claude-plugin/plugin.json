@@ -26,6 +26,12 @@
       "description": "The name set with /rename or --name, above the cards",
       "default": true
     },
+    "showAccount": {
+      "type": "boolean",
+      "title": "Show account",
+      "description": "The email of the Claude account you are logged in with, above the cards",
+      "default": true
+    },
     "showModel": {
       "type": "boolean",
       "title": "Show model card",
